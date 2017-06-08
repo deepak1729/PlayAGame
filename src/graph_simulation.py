@@ -30,7 +30,7 @@ class GameSimulate(object):
         self.treasure_node = self.find_treasure_node()
         print "number of deceptions ", sum(self.deceptions.values())
 
-    def run_simulation(self, budget, cost_D):
+    def run_simulation(self, defender_budget, cost_D, attacker_budget, max_time):
 
         self.deceptions[self.treasure_node.index] = 0
         self.payoff_defender = list()
@@ -47,8 +47,16 @@ class GameSimulate(object):
             seen_deception = 1
         self.update_payoff(0, cost_D, self.deceptions[0], seen_deception, t)
         neighbors = self.network.graph.neighbors(self.nodes[0])
-        while sum(self.payoff_defender) + budget > 0:
+        while sum(self.payoff_defender) + defender_budget > 0:
             t += 1
+            if t >= max_time:
+                print "attacker stayed too long"
+                winner = "defender"
+                break
+            if sum([ x if x<0 else 0 for x in self.payoff_attacker]) + attacker_budget < 0:
+                print "attacker exhausted budget"
+                winner = "defender"
+                break
 
             utilities = self.expected_attacker_payoff(current_node, neighbors, seen_deception, t)
             max_utility = max(utilities)
@@ -75,13 +83,14 @@ class GameSimulate(object):
                     else:
                         break
                 if next_node is None:
-                    print "attacker lost"
+                    print "attacker lost, didn't find a node to move"
                     winner = "defender"
                     break
                 if self.treasure_node.index == next_node.index:
                     print "attacker found the treasure"
+                    winner = "attacker"
                     break
-                # print "next node selected by attacker is: ", next_node.index
+                print "next node selected by attacker is: ", next_node.index
                 self.visited_nodes[current_node.index].add(next_node.index)
                 self.update_payoff(next_node.index, cost_D, self.deceptions[next_node.index], seen_deception, t)
                 neighbors = self.network.graph.neighbors(next_node)
@@ -99,8 +108,8 @@ class GameSimulate(object):
         print "defender's payoff: ", sum(self.payoff_defender)
         print "game ended after {0} moves".format(t)
         print "winner is ", winner
-        return winner
         # self.network.draw_graph()
+        return winner
 
     def update_payoff(self, node, cost_d, is_deception, seen_deceptions, t):
         risk = intial_risk + math.exp(damping_factor * t)
@@ -151,8 +160,8 @@ class GameSimulate(object):
                 node1 = node
                 max_val = n.TrueValue
                 node = n
-        if node.index == 0:
-            return node1
+        # if node.index == 0:
+        #     return node1
         return node
 
     def find_lowest_valuenode(self):
@@ -188,11 +197,18 @@ class GameSimulate(object):
 
 
 if __name__ == '__main__':
-    Game = GameSimulate(10, 0.6, 1)
+    num_nodes = 10
+    edge_probability = 0.6
+    theta = 1
+    defender_budget = 100
+    attacker_budget = num_nodes * 0.3
+    max_time = num_nodes
+    deployment_cost = 1
+    Game = GameSimulate(num_nodes, edge_probability, theta)
     ###
     from collections import defaultdict
 
     result = defaultdict(int)
     for i in range(30):
-        result[Game.run_simulation(100, 1)]+=1
-    print result
+        result[Game.run_simulation(defender_budget, deployment_cost, attacker_budget, max_time)]+=1
+    print result.items()
