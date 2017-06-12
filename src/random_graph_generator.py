@@ -23,15 +23,15 @@ class GenerateGraph(object):
 
     def generate_nodes(self, n, D):
         nodes = list()
-        v = np.abs(np.random.normal(5, 5, size=n))
-        v = v/max(v)
+        visibility = np.abs(np.random.normal(5, 5, size=n))
+        visibility = visibility/max(visibility)
         opr = np.abs(np.random.normal(0, 1, size=n))
         opr = opr / max(opr)
-        t_val = np.abs(np.random.normal(0, 1, size=n))
-        t_val = t_val / max(t_val)
+        true_val = np.abs(np.random.normal(0, 1, size=n))
+        true_val = true_val / max(true_val)
         for i in range(n):
             d = True if i in D else False
-            nodes.append(Node(i, v[i], opr[i], d, t_val[i]))
+            nodes.append(Node(i, visibility[i], opr[i], d, true_val[i]))
         return nodes
 
     def centrality(self):
